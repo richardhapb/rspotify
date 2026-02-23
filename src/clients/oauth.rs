@@ -241,14 +241,22 @@ pub trait OAuthClient: BaseClient {
 
                 if expired {
                     // Ensure that we actually got a token from the refetch
-                    match self.refetch_token().await? {
-                        Some(refreshed_token) => {
+                    match self.refetch_token().await {
+                        Ok(Some(refreshed_token)) => {
                             log::info!("Successfully refreshed expired token from token cache");
                             *self.get_token().lock().await.unwrap() = Some(refreshed_token)
                         }
                         // If not, prompt the user for it
-                        None => {
+                        Ok(None) => {
                             log::info!("Unable to refresh expired token from token cache");
+                            let code = self.get_code_from_user(url)?;
+                            self.request_token(&code).await?;
+                        }
+                        Err(err) => {
+                            log::error!(
+                                "Error refetching token: {err}. Falling back to user prompt."
+                            );
+                            // If the cached token contains invalid data, we want to re-login
                             let code = self.get_code_from_user(url)?;
                             self.request_token(&code).await?;
                         }
