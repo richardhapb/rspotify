@@ -40,8 +40,6 @@ macro_rules! scopes {
 
 #[cfg(test)]
 mod test {
-    use crate::scopes;
-
     #[test]
     fn test_hashset() {
         let scopes = scopes!("hello", "world", "foo", "bar");
